@@ -1,0 +1,2 @@
+this folder contains 'example' data from [1].
+1. Hernandez-Juarez, D., Espinosa, A., Moure, J. C., Vázquez, D., & López, A. M. (2017, March). GPU-accelerated real-time stixel computation. In 2017 IEEE Winter Conference on Applications of Computer Vision (WACV) (pp. 1054-1062). IEEE.
