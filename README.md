@@ -20,7 +20,7 @@ The implementation has the following differences from official implementation [2
 
 ## Usage
 ```sh
-python main_stixel_world.py
+python ./Python/main_stixel_world.py
 ```
 
 ## References

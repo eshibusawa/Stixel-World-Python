@@ -4,7 +4,6 @@
 
 import os
 
-import add_environment
 import numpy as np
 import cupy as cp
 import cv2

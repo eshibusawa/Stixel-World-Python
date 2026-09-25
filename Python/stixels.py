@@ -15,7 +15,7 @@ class Stixels:
         self.param = param
         self.camera_param = camera_param
         self.gpu_module = None
-        self.gpu_module_nvcc = None
+        self.gpu_module_cub = None
 
     def compile_module(self):
         dn = os.path.dirname(__file__)
@@ -55,7 +55,7 @@ class Stixels:
         self.gpu_module = cp.RawModule(code=cuda_source)
         self.gpu_module.compile()
 
-    def compile_module_nvcc(self):
+    def compile_module_cub(self):
         dn = os.path.dirname(__file__)
         fnl = list()
         fnl.append(os.path.join(dn, 'stixels_cub.cu'))
@@ -101,14 +101,14 @@ class Stixels:
         cuda_source = cuda_source.replace('STIXELS_MAX_SECTIONS', str(self.max_sections))
         cuda_source = cuda_source.replace('STIXELS_MINIMUM_OBJECT_DISPARITY', self.strf(self.param.minimum_object_disparity))
 
-        self.gpu_module_nvcc = cp.RawModule(code=cuda_source, backend='nvcc')
-        self.gpu_module_nvcc.compile()
+        self.gpu_module_cub = cp.RawModule(code=cuda_source)
+        self.gpu_module_cub.compile()
 
     def setup_module(self):
         if self.gpu_module is None:
             self.compile_module()
-        if self.gpu_module_nvcc is None:
-            self.compile_module_nvcc()
+        if self.gpu_module_cub is None:
+            self.compile_module_cub()
 
     @staticmethod
     def strf(val):
@@ -281,7 +281,7 @@ class Stixels:
         sz_LUT = sz[0], self.camera_param.max_dis, sz[1]
         d = cp.empty(sz_LUT, dtype=cp.float32)
         assert d.flags.c_contiguous
-        gpu_func = self.gpu_module_nvcc.get_function('computeObjectLUT')
+        gpu_func = self.gpu_module_cub.get_function('computeObjectLUT')
         sz_block = 32, 32
         sz_grid = d.shape[0], math.ceil(self.camera_param.max_dis / sz_block[1])
         gpu_func(
@@ -299,7 +299,7 @@ class Stixels:
         d_disparity = cp.empty((sz[0], self.max_sections), dtype=cp.float32)
         assert d_type.flags.c_contiguous
         assert d_disparity.flags.c_contiguous
-        gpu_func = self.gpu_module_nvcc.get_function('computeStixels')
+        gpu_func = self.gpu_module_cub.get_function('computeStixels')
         sz_block = sz[1], 1
         sz_grid = sz[0], 1
         gpu_func(

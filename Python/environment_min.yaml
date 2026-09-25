@@ -1,0 +1,9 @@
+name: stixel-world-20260925
+channels:
+  - conda-forge
+dependencies:
+  - cuda-version=12.9
+  - cupy
+  - py-opencv
+  - python=3.12.*
+prefix: /path/to/your/envs/stixel-world-20260925

@@ -13,12 +13,12 @@ import cv2
 class RoadEstimation:
     def __init__(self, camera_param):
         self.camera_param = camera_param
-        self.gpu_module_nvcc = None
+        self.gpu_module_cub = None
         self.histogram_threshold = 0.5
         self.max_camera_tilt = math.radians(self.camera_param.max_camera_tilt)
         self.min_camera_tilt = math.radians(self.camera_param.min_camera_tilt)
 
-    def compile_module_nvcc(self):
+    def compile_module_cub(self):
         dn = os.path.dirname(__file__)
         fnl = list()
         fnl.append(os.path.join(dn, 'road_estimation_cub.cu'))
@@ -42,12 +42,12 @@ class RoadEstimation:
         cuda_source = cuda_source.replace('ROAD_ESTIMATION_MAX_DISPARITY', str(self.camera_param.max_dis))
         cuda_source = cuda_source.replace('ROAD_ESTIMATION_HISTOGRAM_THRESHOLD', self.strf(self.histogram_threshold))
 
-        self.gpu_module_nvcc = cp.RawModule(code=cuda_source, backend='nvcc')
-        self.gpu_module_nvcc.compile()
+        self.gpu_module_cub = cp.RawModule(code=cuda_source)
+        self.gpu_module_cub.compile()
 
     def setup_module(self):
-        if self.gpu_module_nvcc is None:
-            self.compile_module_nvcc()
+        if self.gpu_module_cub is None:
+            self.compile_module_cub()
 
     @staticmethod
     def strf(val):
@@ -62,7 +62,7 @@ class RoadEstimation:
 
         d = cp.zeros((self.camera_param.rows, self.camera_param.max_dis), dtype=cp.int32)
         assert d.flags.c_contiguous
-        gpu_func = self.gpu_module_nvcc.get_function('computeHistogram')
+        gpu_func = self.gpu_module_cub.get_function('computeHistogram')
         sz_block = self.histogram_threads, 1
         sz_grid = d.shape[0], 1
         gpu_func(
@@ -75,7 +75,7 @@ class RoadEstimation:
 
         d = cp.empty(self.vd_histogram.shape, dtype=cp.uint8)
         assert d.flags.c_contiguous
-        gpu_func = self.gpu_module_nvcc.get_function('thresholdingHistogram')
+        gpu_func = self.gpu_module_cub.get_function('thresholdingHistogram')
         sz_block = 1024, 1
         sz_grid = math.ceil(d.size/sz_block[0]), 1
         gpu_func(
